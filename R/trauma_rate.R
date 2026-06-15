@@ -13,7 +13,7 @@
 # Fits on logit(prop), bootstraps on logit, inverse-logits to percent
 # Output: ~/Downloads/Trauma_Regions_plot.svg
 # Written by ChatGPT; checked and run in R Studio by E. Marsh.
-# G. Bilotti later checked the scripts and harmonised for the repository.
+# G. Bilotti later checked the script and harmonised it for the repository.
 
 
 # Load libraries
@@ -30,7 +30,6 @@ sourcedir <- file.path("data", "raw_data")
 targetdir <- file.path("data","derived_data")
 
 csv_file <- file.path(sourcedir, "pnas.2410078121.sd01.csv")
-out_svg <- file.path(targetdir, "Trauma_Regions_plot.svg")
 
 # define parameters (after Synder and Arkush)
 regions_of_interest <- c("N coast", "C coast", "S coast")
@@ -178,7 +177,6 @@ p <- ggplot() +
 
 # print(p)
 
-## Export as SVG 
-svglite(out_svg, width = 10, height = 8)
-print(p)
-dev.off()
+# save plot
+ggsave(file.path("figures", "Trauma_Regions_plot.svg"), p,
+       width = 10, height = 8, device = "svg")

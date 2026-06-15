@@ -1,6 +1,6 @@
 ### Helper functions to run the scripts ----
 
-## Figure4.R script helpers ----
+## trauma_rate.R script helper ----
 # fit & bootstrap per-subset function 
 fit_region_spline <- function(df_region, pred_x = NULL, n_boot = 500, spar = 0.85, min_unique_x = 4) {
   # df_region: data.frame with Mid.date and prop_smooth
@@ -73,4 +73,24 @@ fit_region_spline <- function(df_region, pred_x = NULL, n_boot = 500, spar = 0.8
   attr(pred_df, "n_rows") <- n_rows
   attr(pred_df, "n_valid_boot") <- nrow(valid_boots)
   return(pred_df)
+}
+
+## ethnographic_comparison.R helper ----
+# Vargha-Delaney A
+vda_A <- function(x, y) {
+  r <- rank(c(x, y))
+  R1 <- sum(r[seq_along(x)])
+  (R1 / length(x) - (length(x) + 1) / 2) / length(y)
+}
+
+# bootstrap median difference between arrows
+boot_median_diff <- function(x, y, n_boot) {
+  replicate(n_boot, median(sample(x, length(x), replace = TRUE)) -
+              median(sample(y, length(y), replace = TRUE)))
+}
+
+## classifying.R helper ----
+# apply posterior_epred and get the median
+post_median <- function(fit, newdata) {
+  apply(posterior_epred(fit, newdata = newdata), 2, median)
 }

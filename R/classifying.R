@@ -1,10 +1,9 @@
 ### Classifying Palpa points ----
-# This script was originally created by E. Marsh 
 
 # Classify Palpa projectile points as dart or arrow against hafted archaeological points
 # Script written by Claude AI (model 4.7). 
 # It was checked and processed in R Studio by E. Marsh.
-# Prior to publicaiton, G. Bilotti re run the script and integrated it into the repository
+# G. Bilotti later checked the script and harmonised it for the repository.
 
 # Bayesian logistic regression on log-transformed metric attributes, trained
 # on the Appendix A hafted-point reference compilation (Marsh et al. 2024).
@@ -57,81 +56,51 @@
 # =============================================================================
 
 
-# -----------------------------------------------------------------------------
-# 1. Setup
-# -----------------------------------------------------------------------------
-
+# load libraries
 library(readxl)
 library(writexl)
 library(brms)
 library(dplyr)
 library(ggplot2)
-library(ggnewscale)  # multiple fill / shape scales in the same plot
+library(ggnewscale)  
 
-# Fix the random-number generator's starting state. R's default RNG produces
-# a deterministic sequence of pseudorandom numbers once the seed is set, so
-# every call to runif() (rounding-error perturbation, Section 9) and to
-# brms/Stan (MCMC chains, Section 5) returns the same draws on every run.
-# Without this line the results would be very close from run to run — but
-# not bit-identical — and supplementary outputs (perturbed predictions,
-# posterior medians at the 4th decimal place) would shift slightly. The
-# specific integer (today's date in YYYYMMDD form) is arbitrary; any fixed
-# value would do.
-
+# set seed
 set.seed(20260518)
 
-# Palpa integrity-grade palette
+# helper function
+source(file.path("R", "helpers.R"))
 
-palpa_fill <- c("A+B" = "#a7ea52",  # lime
-                "C"   = "#34ac8b",  # teal
-                "D"   = "#beebdf")  # mint
+# Load and prepare training data
 
-# Diverging gradient for P(dart): red (arrow) → cream (boundary) → blue (dart).
-
-pdart_low  <- "#d7191c"  # P(dart) = 0   → arrow
-pdart_mid  <- "#fff5cc"  # P(dart) = 0.5 → boundary
-pdart_high <- "#2c7bb6"  # P(dart) = 1   → dart
-
-# Palpa point shapes: filled square = complete, filled circle = incomplete.
-
-palpa_shape <- c("Complete" = 22, "Incomplete" = 21)
-
-
-# -----------------------------------------------------------------------------
-# 2. Load and prepare training data
-#
 # Source: Appendix A of Marsh et al. (2024), a hafted-point compilation
 # spanning the Americas. We keep only specimens unambiguously identified as
 # Dart or Arrow (excluding “Unclear” cases). 
 # Training is restricted to complete cases on the four shared predictors
 # (thickness, width, TCSA, TCSP), since the bivariate and TCSA/TCSP univariate
 # models require these to be present.
-# -----------------------------------------------------------------------------
 
-haft <- read_excel("Hafted_points_Appendix_A.xlsx", sheet = "Data table")
+haft <- read_excel(file.path(sourcedir, "Hafted_points_Appendix_A.xlsx"), sheet = "Data table")
 
-train <- haft %>%
-  filter(`Weapon Type` %in% c("Dart", "Arrow")) %>%
+train <- haft |>
+  filter(`Weapon Type` %in% c("Dart", "Arrow")) |>
   transmute(
     is_dart   = as.integer(`Weapon Type` == "Dart"),
     thickness = `Point thickness (mm)`,
     width     = `Maximum point width (mm)`,
     tcsa      = `Tip cross-section area (mm²)`,
     tcsp      = `Tip cross-section perimeter (mm)`
-  ) %>%
-  filter(complete.cases(.))
+  ) 
+# only complete cases
+train <- train[complete.cases(train),]
 
-cat("\n--- Training set composition ---\n")
-cat("Training n      :", nrow(train), "\n")
-cat("  Darts         :", sum(train$is_dart), "\n")
-cat("  Arrows        :", sum(!train$is_dart), "\n")
-cat("  Ratio dart:arrow :",
-    sprintf("%.2f : 1", sum(train$is_dart) / sum(!train$is_dart)), "\n")
-cat("Compare Buchanan et al. (2025): 51 darts, 220 arrows (1 : 4.31)\n")
+# N training 
+# nrow(train)
+# sum(train$is_dart) # darts
+# sum(!train$is_dart) # arrows
+# sum(train$is_dart) / sum(!train$is_dart) # ratio dart/arrow
+# cat("Compare Buchanan et al. (2025): 51 darts, 220 arrows (1 : 4.31)\n")
 
-
-# -----------------------------------------------------------------------------
-# 3. Diagnostics: predictor correlation
+# Diagnostics: predictor correlation
 #
 # Width and thickness are physically linked (a wider point is on average
 # thicker). Haas and Kelly (2026) report a strong correlation between width
@@ -139,19 +108,15 @@ cat("Compare Buchanan et al. (2025): 51 darts, 220 arrows (1 : 4.31)\n")
 # p < 0.01) and recommend treating width and thickness as collinear. We
 # report Pearson r and the implied VIF for the bivariate model on log-
 # transformed predictors.
-# -----------------------------------------------------------------------------
-
-r_wt   <- cor(log(train$width), log(train$thickness))
-vif_wt <- 1 / (1 - r_wt^2)
-
-cat("\n--- Predictor correlation ---\n")
-cat("Pearson r [log(width), log(thickness)] :", round(r_wt, 3), "\n")
-cat("VIF for bivariate model               :", round(vif_wt, 2), "\n")
-cat("Rule of thumb: VIF > 5 indicates appreciable multicollinearity.\n")
 
 
-# -----------------------------------------------------------------------------
-# 4. Load and prepare Palpa points
+r_wt   <- cor.test(log(train$width), log(train$thickness), method = "pearson")
+# R = 0.6683266 
+# strong positive correlation (p = 1.702e-11)
+vif_wt <- 1 / (1 - r_wt$estimate^2)
+# VIF = 1.807209: low to moderate corr
+
+### Palpa points ----
 #
 # Includes both Complete and Incomplete points. Incomplete-point measurements
 # are lower bounds on the original dimensions (breakage removes material);
@@ -160,52 +125,43 @@ cat("Rule of thumb: VIF > 5 indicates appreciable multicollinearity.\n")
 #
 # TCSA and TCSP in Palpa_points.xlsx are computed as ½·w·t and
 # 2·√(w² + t²) respectively (mm² and mm), matching the Appendix A
-# convention, so they are loaded as-is.
-# -----------------------------------------------------------------------------
+# convention
 
-palpa <- read_excel("Palpa_points.xlsx", sheet = "1. Projectile points")
+palpa <- read_excel(file.path(sourcedir, "Palpa_points.xlsx"), sheet = "1. Projectile points")
 
-palpa_classified <- palpa %>%
+palpa_classified <- palpa |>
   rename(
     thickness    = `Max thickness (mm)`,
     width        = `Max width (mm)`,
     tcsa         = `Tip cross-section area (mm²)`,
     tcsp         = `Tip cross-section perimeter (mm)`,
     completeness = `Complete? (measurements of fragments are shaded since they may be unreliable for metric comparisons)`
-  ) %>%
+  ) |>
   filter(completeness %in% c("Complete", "Incomplete"),
-         !is.na(thickness), !is.na(width)) %>%
+         !is.na(thickness), !is.na(width)) |>
   mutate(
     completeness = factor(completeness, levels = c("Complete", "Incomplete")),
     is_complete  = completeness == "Complete"
   )
 
-cat("\n--- Palpa points ---\n")
-cat("Total classifiable Palpa points n =", nrow(palpa_classified), "\n")
-cat("  Complete   :", sum(palpa_classified$is_complete), "\n")
-cat("  Incomplete :", sum(!palpa_classified$is_complete), "\n")
+# # Total classifiable Palpa points
+# nrow(palpa_classified) # 199
+# # Complete points:
+# sum(palpa_classified$is_complete) # 122
+# Incomplete points:
+# sum(!palpa_classified$is_complete) # 77
 
 
-# -----------------------------------------------------------------------------
-# 5. Fit five Bayesian logistic regression models
-#
-# Weakly informative priors: N(0, 5) on the intercept and N(0, 2.5) on slopes.
-# On the log-odds scale, N(0, 5) puts prior mass essentially uniformly across
-# P(dart) ∈ (0.01, 0.99) centred on 0.5 — equivalent to the vague 50:50 prior
-# recommended by Haas and Kelly (2026). The slope prior is weakly informative
-# around zero.
-#
-# brms uses Stan via the No-U-Turn Sampler. Defaults: 4 chains, 2,000
-# iterations each (1,000 warmup, 1,000 post-warmup), total 4,000 posterior
-# draws.
-# -----------------------------------------------------------------------------
+#### Bayesian logistic regression models ----
 
+# if you want, you can load them directly
+# readRDS(file.path(targetdir, "brms_fits.rds"))
+
+# setting weakly informative priors for both intercept and slope following Haas and Kelly (2026)
 priors <- c(
   prior(normal(0, 5),   class = "Intercept"),
   prior(normal(0, 2.5), class = "b")
 )
-
-cat("\n--- Fitting brms models (5 fits, ~3–5 min total) ---\n")
 
 fit_bivar <- brm(is_dart ~ log(thickness) + log(width),
                  data = train, family = bernoulli(),
@@ -227,30 +183,70 @@ fit_tcsp  <- brm(is_dart ~ log(tcsp),
                  data = train, family = bernoulli(),
                  prior = priors, seed = 105, refresh = 0, silent = 2)
 
-# In-sample classification accuracy on the training set, by model.
-# Strictly a sanity check; not a substitute for proper cross-validation.
-acc <- function(fit) {
-  p <- apply(posterior_epred(fit), 2, median)
-  mean(round(p) == train$is_dart)
-}
-cat("\n--- Training-set in-sample accuracy ---\n")
-cat("  bivariate :", round(acc(fit_bivar), 3), "\n")
-cat("  thickness :", round(acc(fit_thick), 3), "\n")
-cat("  width     :", round(acc(fit_width), 3), "\n")
-cat("  TCSA      :", round(acc(fit_tcsa),  3), "\n")
-cat("  TCSP      :", round(acc(fit_tcsp),  3), "\n")
+## posterior predictive checks ----
 
+# R-hat and effective sample size for all models
+# We need the following conditions to be true:
+# Rhat < 1.01
+# Bulk_ESS/Tail_ESS > 400
+# lapply(list(fit_bivar, fit_thick, fit_width, fit_tcsa, fit_tcsp), function(m) {
+#   s <- summary(m)$fixed
+#   print(round(s[, c("Rhat", "Bulk_ESS", "Tail_ESS")], 3))
+# })
+# It looks fine
 
-# -----------------------------------------------------------------------------
-# 6. Predict posterior median P(dart) for every Palpa point
-#
+library(bayesplot)
+models <- list(bivar = fit_bivar, thick = fit_thick, 
+               width = fit_width, tcsa = fit_tcsa, tcsp = fit_tcsp)
+
+# Binary outcome: use bars
+# lapply(names(models), function(nm) {
+#   pp_check(models[[nm]], type = "bars", ndraws = 200) + 
+#     ggtitle(nm)
+# })
+# lapply(names(models), function(nm) {
+#   pp_check(models[[nm]], type = "stat", stat = "mean", ndraws = 1000) +
+#     ggtitle(nm)
+# })
+# They both look fine (observed value contained in prediction), but wide uncertainty (expectable)
+
+# compare models
+loo_bivar <- loo(fit_bivar)
+loo_thick <- loo(fit_thick)
+loo_width <- loo(fit_width)
+loo_tcsa  <- loo(fit_tcsa)
+loo_tcsp  <- loo(fit_tcsp)
+
+loo_compare(loo_bivar, loo_thick, loo_width, loo_tcsa, loo_tcsp)
+# thickness only performs poorly compared to the other
+# fit_bivar, fit_width, and fit_tcsp are essentially equivalent
+# adding thickness to width (bivar) does not improve the model
+# tip cross section is as good as width to predict the observed results
+
+# # In-sample classification accuracy on the training set, by model.
+# # Strictly a sanity check; not a substitute for proper cross-validation.
+# # small sample size likely inflates accuracy
+# acc <- function(fit) {
+#   p <- apply(posterior_epred(fit), 2, median)
+#   mean((p > 0.5) == train$is_dart)
+# }
+# cat("  bivariate :", round(acc(fit_bivar), 3), "\n")
+# bivariate : 0.987 
+# cat("  thickness :", round(acc(fit_thick), 3), "\n")
+# thickness : 0.899 
+# cat("  width     :", round(acc(fit_width), 3), "\n")
+# width     : 1 
+# cat("  TCSA      :", round(acc(fit_tcsa),  3), "\n")
+# TCSA      : 0.962 
+# cat("  TCSP      :", round(acc(fit_tcsp),  3), "\n")
+# TCSP      : 1 
+
+# in terms of predicting accuracy thickness is the worst. 
+# Width and tip cross section are the best ones
+
+## Predict posterior median P(dart) for every Palpa point ----
 # Applies to both complete and incomplete points. Per-point credible
 # intervals are available from the same posterior_epred() output if needed.
-# -----------------------------------------------------------------------------
-
-post_median <- function(fit, newdata) {
-  apply(posterior_epred(fit, newdata = newdata), 2, median)
-}
 
 palpa_classified$P_dart_bivariate <- post_median(fit_bivar, palpa_classified)
 palpa_classified$P_dart_thickness <- post_median(fit_thick, palpa_classified)
@@ -258,15 +254,11 @@ palpa_classified$P_dart_width     <- post_median(fit_width, palpa_classified)
 palpa_classified$P_dart_TCSA      <- post_median(fit_tcsa,  palpa_classified)
 palpa_classified$P_dart_TCSP      <- post_median(fit_tcsp,  palpa_classified)
 
-
-# -----------------------------------------------------------------------------
-# 7. Width threshold μ (univariate width model)
+### Width threshold μ (univariate width model) ----
 #
-# Method: for every posterior draw, find the width at which the linear
+# for every posterior draw, find the width at which the linear
 # predictor crosses zero (i.e., where P(dart) = 0.5). This yields a posterior
 # distribution of the threshold from the brms univariate width fit.
-#
-# -----------------------------------------------------------------------------
 
 grid_w <- data.frame(width = seq(5, 40, length.out = 2000))
 lp     <- posterior_linpred(fit_width, newdata = grid_w)  # draws × widths
@@ -276,10 +268,11 @@ threshold_draws <- apply(lp, 1, function(eta) {
 })
 threshold_draws <- threshold_draws[is.finite(threshold_draws)]
 
-threshold_med <- median(threshold_draws)              # non-parametric point estimate
-threshold_ci  <- quantile(threshold_draws,            # non-parametric interval
+threshold_med <- median(threshold_draws)              
+threshold_ci  <- quantile(threshold_draws,            
                           c(0.025, 0.975))
 
+# print output
 cat("\n--- Width threshold (P(dart) = 0.5) ---\n")
 cat(sprintf("  This study (Marsh et al. 2024 reference): %.2f mm",
             threshold_med),
@@ -289,11 +282,10 @@ cat("  Haas and Kelly (2026, Buchanan et al. (2025) expanded reference): ",
     "16.6 – 18.5 mm (median 17.6 mm)\n", sep = "")
 
 
-# -----------------------------------------------------------------------------
-# 8. Breakage diagnosis and assigned-model P(dart) for incomplete points
+### Breakage diagnosis and assigned-model P(dart) for incomplete points ----
 #
 # Fragment measurements are lower bounds on the original dimensions. To
-# classify incomplete points honestly, we diagnose which dimension was lost
+# classify incomplete points correctly, we diagnose which dimension was lost
 # in breakage, then classify using only the trustworthy dimension(s).
 #
 # Reference distribution: log(width / thickness) for the complete Palpa
@@ -311,13 +303,13 @@ cat("  Haas and Kelly (2026, Buchanan et al. (2025) expanded reference): ",
 #                              along the length (tip or base missing) and
 #                              both width and thickness are intact; use
 #                              the bivariate model.
-#
 # This diagnostic uses the complete Palpa points as the reference (not the
 # Appendix A hafted set), because the *Palpa-specific* width/thickness
 # allometry is what the local breakage diagnosis needs to compare against.
-# -----------------------------------------------------------------------------
 
-complete_subset <- palpa_classified %>% filter(is_complete)
+complete_subset <- palpa_classified |> 
+  filter(is_complete)
+
 complete_subset$log_ratio <- log(complete_subset$width /
                                    complete_subset$thickness)
 
@@ -331,7 +323,7 @@ cat(sprintf("  log(width/thickness): median %.3f, 95%% range [%.3f, %.3f]\n",
 
 # Diagnose every Palpa point (complete points are diagnosed as "intact",
 # incomplete points get a breakage_pattern label).
-palpa_classified <- palpa_classified %>%
+palpa_classified <- palpa_classified |>
   mutate(
     log_ratio        = log(width / thickness),
     breakage_pattern = case_when(
@@ -359,8 +351,7 @@ palpa_classified$model_used <- with(palpa_classified, dplyr::case_when(
 ))
 
 
-# -----------------------------------------------------------------------------
-# 9. Measurement-error propagation: rounding-induced uncertainty in P(dart)
+#### Measurement-error propagation: rounding-induced uncertainty in P(dart) ----
 #
 # Palpa measurements were recorded to the nearest 1 mm.
 #
@@ -389,9 +380,8 @@ palpa_classified$model_used <- with(palpa_classified, dplyr::case_when(
 # Incomplete points are not included here because their measurement
 # uncertainty is dominated by breakage (handled in Section 8), not calliper
 # precision.
-# -----------------------------------------------------------------------------
 
-M <- 100  # Monte Carlo perturbations per point
+M <- 1000  # number of Monte Carlo sim
 
 complete_idx  <- which(palpa_classified$is_complete)
 n_complete    <- length(complete_idx)
@@ -412,20 +402,17 @@ cat("  Running posterior_epred() under perturbed measurements...\n")
 # (draws × rows) posterior_epred() output to a per-row posterior median;
 # we then aggregate those medians within each Palpa point's M perturbations
 # to get the rounding-induced 95% interval.
-rounding_pred <- function(fit, newdata) {
-  apply(posterior_epred(fit, newdata = newdata), 2, median)
-}
 
-expanded$p_bivar <- rounding_pred(fit_bivar, expanded)
-expanded$p_thick <- rounding_pred(fit_thick, expanded)
-expanded$p_width <- rounding_pred(fit_width, expanded)
-expanded$p_tcsa  <- rounding_pred(fit_tcsa,  expanded)
-expanded$p_tcsp  <- rounding_pred(fit_tcsp,  expanded)
+expanded$p_bivar <- post_median(fit_bivar, expanded)
+expanded$p_thick <- post_median(fit_thick, expanded)
+expanded$p_width <- post_median(fit_width, expanded)
+expanded$p_tcsa  <- post_median(fit_tcsa,  expanded)
+expanded$p_tcsp  <- post_median(fit_tcsp,  expanded)
 
 # Per Palpa point, summarise the M perturbations: lo / median / hi for
 # each model.
-rounding_summary <- expanded %>%
-  group_by(row_id) %>%
+rounding_summary <- expanded |>
+  group_by(row_id) |>
   summarise(
     P_dart_bivariate_lo = quantile(p_bivar, 0.025),
     P_dart_bivariate_hi = quantile(p_bivar, 0.975),
@@ -440,66 +427,60 @@ rounding_summary <- expanded %>%
     .groups = "drop"
   )
 
-# Merge rounding-error bounds back onto the main table. Incomplete points stay NA
-# in the *_lo / *_hi columns. `dplyr::` qualifier prevents collision with
-# MASS::select (which loads as a brms/Stan dependency on some systems).
-palpa_classified <- palpa_classified %>%
-  mutate(row_id = dplyr::row_number()) %>%
-  dplyr::left_join(rounding_summary, by = "row_id") %>%
-  dplyr::select(-row_id)
+# Merge rounding-error bounds back onto the main table. 
+palpa_classified <- palpa_classified |>
+  mutate(row_id = row_number()) |>
+  left_join(rounding_summary, by = "row_id") |>
+  select(-row_id)
 
-cat("  Done. Rounding-error 95% intervals added to output.\n")
+#### Export output ----
 
-
-# -----------------------------------------------------------------------------
-# 10. Save outputs
-# -----------------------------------------------------------------------------
-
-write_xlsx(palpa_classified, "Palpa_classified.xlsx")
+write_xlsx(palpa_classified, file.path(targetdir, "Palpa_classified.xlsx"))
 
 saveRDS(list(bivar = fit_bivar, thick = fit_thick, width = fit_width,
              tcsa  = fit_tcsa,  tcsp  = fit_tcsp, train = train),
-        "brms_fits.rds")
+        file.path(targetdir, "brms_fits.rds"))
 
-cat("\n--- Saved ---\n")
-cat("  Palpa_classified.xlsx\n")
-cat("  brms_fits.rds\n")
+### Figures ----
 
+# define palettes 
+palpa_fill <- c("A+B" = "#a7ea52",  
+                "C"   = "#34ac8b",  
+                "D"   = "#beebdf")  
 
-# -----------------------------------------------------------------------------
-# 11. Plotting setup shared across all three plots
-# -----------------------------------------------------------------------------
+# diverging gradient
+pdart_low  <- "#d7191c"  # P(dart) = 0   → arrow
+pdart_mid  <- "#fff5cc"  # P(dart) = 0.5 → boundary
+pdart_high <- "#2c7bb6"  # P(dart) = 1   → dart
+
+# point shapes
+palpa_shape <- c("Complete" = 22, "Incomplete" = 21)
 
 # Add integrity-grade grouping (A+B / C / D), used as fill color in every
 # plot. Points with a missing integrity grade are dropped from plotting.
-# `plot_palpa` is the full set including fragments; `plot_palpa_complete`
-# is restricted to complete points only and is used by Plots 1 and 3.
-plot_palpa <- palpa_classified %>%
+
+plot_palpa <- palpa_classified |>
   mutate(grade_group = case_when(
     `Integrity grade` %in% c("A", "B") ~ "A+B",
     `Integrity grade` == "C"           ~ "C",
     `Integrity grade` == "D"           ~ "D",
     TRUE                               ~ NA_character_
-  )) %>%
+  )) |>
   filter(!is.na(grade_group))
 
-plot_palpa_complete <- plot_palpa %>% filter(is_complete)
+plot_palpa_complete <- plot_palpa |> 
+  filter(is_complete)
 
-train_lab <- train %>%
+train_lab <- train |>
   mutate(weapon = ifelse(is_dart == 1L, "Dart", "Arrow"))
 
 
-# -----------------------------------------------------------------------------
-# 12. Plot 1: bivariate decision surface (width × thickness; Figure 7)
-#
-# Background: posterior median P(dart) from the bivariate model on a grid of
-# (width, thickness). Foreground: hafted reference points (open shapes) and
-# complete Palpa points as filled squares colored by integrity grade.
+## Figure 7 ----
+# Palpa points against hafted dart/arrow reference
+# The background color indicates the posterior median of P(dart) from the bivariate model 
 # Incomplete points are excluded because their width and thickness
 # measurements are lower bounds on the original dimensions and would plot
 # in misleading positions.
-# Width on x-axis.
-# -----------------------------------------------------------------------------
 
 w_range <- range(c(plot_palpa_complete$width, train_lab$width),         na.rm = TRUE)
 t_range <- range(c(plot_palpa_complete$thickness, train_lab$thickness), na.rm = TRUE)
@@ -556,37 +537,26 @@ p1 <- ggplot() +
   theme(panel.grid.minor = element_blank(),
         legend.box       = "vertical")
 
-ggsave("Palpa_classification_plot.svg", p1,
-       width = 10, height = 7, device = "svg")
+ggsave(file.path("figures", "Figure_7.svg"), 
+       p1, width = 10, height = 7, device = "svg")
 
+## Figure S9 ----
 
-# -----------------------------------------------------------------------------
-# 13. Plot 2: P(dart) summary with rounding error and incomplete points (Figure S9)
-#
 # For complete Palpa points, plot the posterior median P(dart) under each of
-# the five models in five separate rows, with horizontal error bars showing
-# the 95% interval from ±0.5 mm rounding (Section 9). A sixth row shows
-# incomplete points using the assigned-model P(dart) from Section 8 — i.e.,
-# each fragment is classified using only the dimension(s) preserved through
-# breakage (bivariate, thickness-only, or width-only depending on the
+# the five models. 
+# horizontal error bars showing the 95% CI from ±0.5 mm rounding.
+# A sixth row shows incomplete points. each fragment is classified using only 
+# the dimension(s) preserved (bivariate, thickness-only, or width-only depending on the
 # breakage_pattern). Rounding error is not shown for incomplete points
 # because their measurement uncertainty is dominated by breakage, not
 # calliper precision.
-#
-# Lets the reader assess:
-#   (i)   classification robustness across model choices,
-#   (ii)  classification confidence (distance from P = 0.5),
-#   (iii) sensitivity to ±0.5 mm rounding error (length of error bars),
-#   (iv)  integrity-grade pattern (do A+B, C, D points behave alike?),
-#   (v)   how fragmented points compare to complete ones.
-# -----------------------------------------------------------------------------
 
 models <- c("bivariate", "thickness", "width", "TCSA", "TCSP")
 
 # Subsets used to label rows. complete_plot drives rows 1–5; incomplete_plot
 # drives row 6 (assigned model).
-complete_plot   <- plot_palpa %>% filter(is_complete)
-incomplete_plot <- plot_palpa %>% filter(!is_complete)
+complete_plot   <- plot_palpa |> filter(is_complete)
+incomplete_plot <- plot_palpa |> filter(!is_complete)
 
 n_complete   <- nrow(complete_plot)
 n_incomplete <- nrow(incomplete_plot)
@@ -629,12 +599,12 @@ palpa_long_incomplete <- data.frame(
 palpa_long <- rbind(palpa_long_complete, palpa_long_incomplete)
 
 # Per-row dart-count summary text.
-summary_df <- palpa_long %>%
-  group_by(model_key) %>%
+summary_df <- palpa_long |>
+  group_by(model_key) |>
   summarise(n      = n(),
             n_dart = sum(p_dart >= 0.5),
             pct    = round(100 * n_dart / n),
-            .groups = "drop") %>%
+            .groups = "drop") |>
   mutate(label = sprintf("P(dart) ≥ 0.5: %d / %d (%d%%)",
                          n_dart, n, pct))
 
@@ -674,7 +644,7 @@ p2 <- ggplot() +
   geom_hline(yintercept = length(models) + 0.5,
              colour = "gray60", linetype = "dotted", linewidth = 0.4) +
   # Rounding-error 95% intervals (NA-omitted automatically for incomplete row)
-  geom_segment(data = palpa_long %>% filter(!is.na(p_lo)),
+  geom_segment(data = palpa_long |> filter(!is.na(p_lo)),
                aes(x = p_lo, xend = p_hi, y = y_pos, yend = y_pos),
                colour = "gray35", alpha = 0.45, linewidth = 0.35,
                inherit.aes = FALSE) +
@@ -730,27 +700,24 @@ p2 <- ggplot() +
         panel.grid.major.y = element_blank(),
         axis.text.y        = element_text(lineheight = 0.9))
 
-ggsave("Palpa_pdart_summary.svg", p2,
+ggsave(file.path("figures", "Figure_9.svg"), p2,
        width = 11, height = 7, device = "svg")
 
-
-# -----------------------------------------------------------------------------
-# 14. Plot 3: univariate width logistic curve (Figure 8)
-#
-#Follows Haas and Kelly (2026, figure 3): P(dart) as a function of width,
+## Figure 8 ----
+# univariate width logistic curve after Haas and Kelly (2026, figure 3)
+# P(dart) as a function of width,
 # logistic curve from the brms univariate width fit, threshold μ,
 # 95% credible interval shaded around the threshold. Complete Palpa points
 # are plotted along the curve at their model-predicted P(dart); incomplete
-# points are excluded because their widths are lower bounds on the
-# original. Hafted reference points shown along the y = 1 (darts) and
+# points are excluded.
+# Hafted reference points shown along the y = 1 (darts) and
 # y = 0 (arrows) edges, jittered for visibility.
-# -----------------------------------------------------------------------------
 
 grid_w_p <- data.frame(width = seq(5, 45, length.out = 1000))
 grid_w_p$p_dart <- apply(posterior_epred(fit_width, newdata = grid_w_p),
                          2, median)
 
-ref_plot <- train_lab %>%
+ref_plot <- train_lab |>
   mutate(p_pos = ifelse(weapon == "Dart", 1.0, 0.0))
 
 p3 <- ggplot() +
@@ -810,11 +777,5 @@ p3 <- ggplot() +
   theme_minimal(base_size = 12) +
   theme(panel.grid.minor = element_blank())
 
-ggsave("Palpa_width_logistic_plot.svg", p3,
+ggsave(file.path("figures", "Figure_8.svg"), p3,
        width = 10, height = 6, device = "svg")
-
-cat("\n--- Plots saved ---\n")
-cat("  Palpa_classification_plot.svg   (bivariate decision surface)\n")
-cat("  Palpa_pdart_summary.svg         (P(dart) across the five models)\n")
-cat("  Palpa_width_logistic_plot.svg   (univariate width, Haas and Kelly-comparable)\n")
-cat("\nDone.\n")
