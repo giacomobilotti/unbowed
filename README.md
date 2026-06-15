@@ -1,2 +1,50 @@
-# unbowed
-This repository contains the R scripts necessary to perform some of the analyses presented in the paper titled: "Unbowed: raiding and hunting with Paracas spearthrowers and slings and the conspicuous absence of the bow in western South America".
+# Introduction 
+
+This repository contains the R scripts necessary to perform some of the analyses presented in the paper titled:
+
+**Unbowed: raiding and hunting with Paracas spearthrowers and slings and the conspicuous absence of the bow in western South America**
+
+### Abstract
+
+New weapons such as the bow and arrow often emerge alongside rising population densities and interpersonal conflict. We test this generalization in southern Peru during the violent Final Formative (400–1 BCE) with measurements of 200 obsidian projectile points anchored to precise Bayesian chronologies from Paracas sites in the Palpa valleys. Based on metric comparisons, we conclude all points were spearthrower darts. Bows are also absent in Paracas grave goods and imagery on ceramics and textiles. Conflict was limited to small-scale raids, based on a compilation of sites with slingstones, mace heads, skeletal trauma, and walls. Hunting and herding were focused in the highlands, which we mapped with a MaxEnt predictive surface of modern prey location. Based on spatial correlations, conflict did not drive settlement patterns; the key factors were hunting grounds, herding pastures, and agricultural suitability. Pending future research, the notable lack of the bow in the region may include later Nasca, Moche, and Chimú populations. This invites us to rethink the conditions that drive and limit the adoption and invention of bows, a uniquely human and apparently superior projectile technology that no one bothered with during these violent centuries.
+
+### Authors
+
+Erik Marsh1, Lucía Yebra1, Silvina Castro1, Gianni Cunietti2, Valeria Cortegoso1, Johny Isla3, Hanna Schubert4, Giacomo Bilotti5, Markus Reindel6, Christian Mader4,6
+
+1. Consejo Nacional de Investigaciones Científicas y Técnicas (CONICET). Laboratorio de Paleoecología Humana, Instituto Intecrdisciplinario de Ciencias Básicas, Facultad de Filosofía y Letras, Universidad Nacional de Cuyo, Mendoza, Argentina
+2. School of Social Sciences, The University of Western Australia, Crawley, Australia
+3. Nasca-Palpa Management Plan, Peruvian Ministry of Culture, Nasca, Peru
+4. Department of Anthropology of the Americas, University of Bonn, Bonn, Germany
+5. Social Resilience Lab, School of Culture and Society, Aarhus University, Aarhus, Denmark
+6. Commission for Archaeology of Non-European Cultures, German Archaeological Institute, Bonn, Germany
+
+### Corresponding authors
+
+Erik J. Marsh. emarsh@mendoza-conicet.gob.ar
+Christian Mader. christian.mader@uni-bonn.de
+
+### Repository authors
+
+The repository was created and is maintained by E. Marsh and G. Bilotti
+
+---
+
+## Repository structure
+
+The repository folder is structured as follows:
+
+- **README.md**: This file (repository overview).
+- **R/** folder: Contains all the R scripts to produce the analyses and figures presented in the paper
+- **data/**: Raw and derived data necessary for the paper. 
+  - *raw_data/*: Where input files are stored.
+  - *derived_data/*: Contains processed or derived datasets.
+
+### Instructions 
+
+Methodological details are provided in the main text and SI of the paper. Here only practical instructions are provided.
+
+In section 3.5 of the main text and SI section 3, agricultural suitability is described. In order to reproduce it, the *fuzzifycation.R* script should be run.
+
+
+### Requirements
