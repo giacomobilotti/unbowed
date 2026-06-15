@@ -48,6 +48,11 @@ To reproduce the results in the paper, run the scripts in the `R/` directory in 
 Each script is independent and does not require a specific execution order.
 The `helpers.R` script does not need to be run manually. It is sourced automatically by the main scripts when required.
 
+### Data availability
+
+Data are provided with the paper as part of the Supplementary Information (SI).
+To reproduce the analyses, download the SI and place the required files in the *data/* directory, preserving the original folder structure to ensure compatibility with the scripts.
+
 ### Requirements
 
 This project was developed using R version 4.3.2.
