@@ -1,0 +1,1 @@
+java -mx3641m -cp "/Applications/maxent/maxent.jar:/Applications/maxent/maxent.jar" density.Explain -l /Applications/maxent/output/Large_mammal.lambdas -c /Applications/maxent/output/Large_mammal.asc /Users/erik/Documents/QGIS/Maxent/Peru_ASCs

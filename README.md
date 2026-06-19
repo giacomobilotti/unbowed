@@ -64,3 +64,17 @@ To install all required packages run:
 `install.packages("renv")`
 
 `renv::restore()`
+
+## Additional software
+
+Some analyses were performed using software external to R. 
+
+### MaxEnt
+
+The species distribution model was generated using MaxEnt.
+Files and documentation are available in the `maxent/` directory.
+
+### OxCal
+
+The Bayesian chronological model was generated using OxCal.
+The complete OxCal script is available in the `oxcal/` directory.

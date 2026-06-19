@@ -1,0 +1,58 @@
+Tue Sep 24 16:59:33 ART 2024
+MaxEnt version 3.4.4
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/1.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/11.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/12.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/13.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/14.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/15.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/16.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/17.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/18.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/19.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/2.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/3.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/4.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/5.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/6.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/7.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/8.asc
+Checking header of /Users/erik/Documents/QGIS/Maxent/Peru_ASCs/9.asc
+Reading samples from large_mammals_thinned.csv
+Read samples: max memory 3817865216, total allocated 654835712, free 291195536, used 363640176, increment -376243744
+Warning: interpreting lat column of sample file as latitude
+Extractor: max memory 3817865216, total allocated 654835712, free 288783816, used 366051896, increment 2411720
+Extracting random background and sample data
+Time since start: 1.973
+1667430 points with values for all grids
+Adding samples to background in feature space
+Command line used: 
+Command line to repeat: java density.MaxEnt nowarnings noprefixes outputdirectory=/Applications/maxent/output samplesfile=/Applications/maxent/data/large_mammals_thinned.csv environmentallayers=/Users/erik/Documents/QGIS/Maxent/Peru_ASCs randomseed
+Species: Large_mammal
+Layers: 1 11 12 13 14 15 16 17 18 19 2 3 4 5 6 7 8 9
+Layertypes: Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous Continuous
+outputdirectory: /Applications/maxent/output
+samplesfile: /Applications/maxent/data/large_mammals_thinned.csv
+environmentallayers: /Users/erik/Documents/QGIS/Maxent/Peru_ASCs
+randomseed: true
+
+getSamples: max memory 3817865216, total allocated 654835712, free 236068168, used 418767544, increment 52715648
+Making features
+makeFeatures: max memory 3817865216, total allocated 654835712, free 212957096, used 441878616, increment 23111072
+Large_mammal: 
+Regularization values: linear/quadratic/product: 0.170, categorical: 0.250, threshold: 1.420, hinge: 0.500
+58 samples
+Density: max memory 3817865216, total allocated 654835712, free 187625536, used 467210176, increment 25331560
+linearPredictor: max memory 3817865216, total allocated 654835712, free 187625536, used 467210176, increment 0
+FeaturedSpace: max memory 3817865216, total allocated 654835712, free 187625536, used 467210176, increment 0
+Sequential: max memory 3817865216, total allocated 654835712, free 187625536, used 467210176, increment 0
+Initial loss: 9.21612361673191
+Time since start: 82.325
+500: time = 79.584000 loss = 8.066987
+Resulting gain: 1.14913635646049
+Projecting...
+Writing file /Applications/maxent/output/Large_mammal.asc
+Time since start: 94.35
+Writing /Applications/maxent/output/plots/Large_mammal.png
+Time since start: 97.177
+Ending

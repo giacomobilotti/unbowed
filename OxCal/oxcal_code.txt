@@ -1,0 +1,203 @@
+// OxCal script
+// Paste its content into oxcal 
+Plot()
+ {
+  Outlier_Model("Charcoal",Exp(1,-10,0),U(0,3),"t");
+  Curve("SHCal20","shcal20.14c");
+  Curve("IntCal20","intcal20.14c");
+//This alternative approach to calibration does not rely on the modern air mixtures, but allows the model to estimate the most likely mixture based on the rest of the priors. The result is similar.  
+//Mix_Curves("Cutamalla floating","SHCal20","IntCal20",U(0,100));
+  Mix_Curves("Cutamalla mix","SHCal20","IntCal20",P(-1,101,[0,5,5,5,5,5,5,5,5,5,5,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,18,18,18,18,18,18,18,18,18,18,7,7,7,7,7,7,7,7,7,7,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]));
+  //Mollake Chico burial
+  R_Date("Mollake Chico, ET-128",2495,45);
+  //Two duplicate dates on a sample of burned cotton are from the same context, but are too old, manually rejected by Isla & Reindel 2006
+  //R_Date("Mollake Chico, ET-125",2910,70);
+  //R_Date("Mollake Chico, ET-176",2600,54);
+  Sequence()
+  {
+   Boundary("Start Jauranga");
+   R_Date("Capa Q, Natural, Hd-24264",2458,31);
+   KDE_Plot("Occupation of Jauranga")
+   {
+    //ET-463 has unclear stratigraphic relationships
+    R_Date("Unit 4, UA 13, Capa K, ET-463",2220,54);
+    Sequence("Units 1 and 4")
+    {
+     Phase("Capa N + Capa K in UA 9")
+     {
+      R_Date("Unit 1, Capa N, ET-379",2450,45);
+      R_Date("Unit 4, UA 9, Capa K, ET-466",2460,54);
+     };
+     Combine("Unit 1, Capa G, Hearth 3")
+     {
+      R_Date("Hd-24209",2324,20);
+      R_Date("ET-378",2335,49);
+     };
+     R_Date("Unit 1, Capa G, Hd-24234",2283,22);
+     R_Date("Unit 4, UA13, Capa F, ET-462",2255,49);
+     Phase("Capa D")
+     {
+      R_Date("Unit 1, Capa D, ET-377",2195,49);
+      R_Date("Unit 1, Capa D, ET-376",2160,49);
+     };
+     R_Combine("Unit 1, Capa C1, Hearth 1")
+     {
+      R_Date("ET-438",2325,54);
+      R_Date("Hd-24232",2284,22);
+     };
+    };
+    Sequence("Unit 2")
+    {
+     Phase("Capas J–I")
+     {
+      //Possibly out of stratigraphic position, so it is nested in a general phase for capas J–I
+      R_Date("Capa J, ET-456",2270,54);
+      Sequence("Capas J+K then I")
+      {
+       Phase("Capas J+K")
+       {
+        R_Date("Capa K, ET-457",2485,54);
+        R_Date("Capa J, ET-454",2420,54);
+       };
+       Phase("Capa I")
+       {
+        R_Date("Capa I, ET-447",2285,54);
+        R_Date("Capa I, ET-446",2290,54);
+        R_Date("Capa I, ET-449",2190,54);
+        R_Date("Capa I, ET-451",2300,54);
+        R_Date("Capa I, ET-452",2305,49);
+        R_Date("Capa I, ET-453",2430,54);
+        R_Date("Capa I, ET-458",2380,49);
+        //Lab code is incorrect in project database (Hd-24305); ET-448 is correct, following Unkel 2006 and Unkel et al. 2012 (sample 319 in all sources)
+        R_Date("Capa I, ET-448",2330,54);
+       };
+      };
+     };
+     Phase("Capa G in UA1+3; Capa E in UA5")
+     {
+      R_Date("Capa G, ET-432",2325,49);
+      R_Date("Capa G, Hd-24263",2247,23);
+      R_Date("Capa E, UA 5, ET-433",2230,49);
+     };
+     Phase("Capa E in UA1+2")
+     {
+      R_Date("Capa E, UA1, ET-381",2290,45);
+      R_Date("Capa E, UA2, ET-382",2305,45);
+      R_Date("Capa E, UA2, ET-431",2375,49);
+     };
+    };
+    Sequence("TP5")
+    {
+     Phase("Muro M1")
+     {
+      R_Date("Muro M1, ET-467",2330,54);
+      Combine("Fogón 37")
+      {
+       R_Date("Muro M1, ET-604",2430,54);
+       R_Date("Muro M1, Et-603",2415,49);
+      };
+     };
+     Sequence("Fogón 36")
+     {
+      R_Date("Level 2, ET-602",2415,54);
+      Phase("Level I, Fogón 36")
+      {
+       //Possible old wood outlier, fails combine test with date from the same level, so grouping as a phase
+       R_Date("ET-461",2505,54)
+       {
+        Outlier(1);
+       };
+       R_Date("ET-459",2335,54);
+      };
+     };
+     Combine("Capa H, Fogón 33")
+     {
+      R_Date("ET-158",2315,54);
+      R_Date("ET-156",2215,49);
+     };
+    };
+    First("First Jauranga");
+    Last("Last Jauranga");
+    Span("Span Jauranga");
+   };
+   Boundary("End Jauranga");
+   //Intrusive burial with Nasca 5 ceramics
+   //R_Date("Unit 1, burial 4, ET-164",2460,68);
+   //Insufficient collagen; unreliable date
+   //   R_Date("TP5, burial 1, left humerus, capa H, Hd-23475",1090,35);
+  };
+  Sequence()
+  {
+   //Stratigraphic relationship unclear; appears to be older than all other dates
+   R_Date("Hd-26861, E2",2413,40);
+   Boundary("Start Cutamalla");
+   KDE_Plot("Cutamalla")
+   {
+    First("First Cutamalla");
+    Last("Last Cutamalla");
+    Span("Span Cutamalla");
+    R_Date("MAMS-24514, UA-1, C",2237,23);
+    R_Date("MAMS-24513, UA-4/Hoyo, D",2157,23);
+    Sequence("UA 6")
+    {
+     R_Date("MAMS-24518, UA-6, D",2215,23);
+     R_Date("MAMS-24517, UA-6, C",2246,23);
+    };
+    Sequence("UA-7")
+    {
+     Phase("UA-7, E")
+     {
+      R_Date("MAMS-24492, UA-7, Silo 10, E",2150,22);
+      R_Date("MAMS-24516, UA-7, Silo 14, E",2168,23);
+      R_Date("MAMS-24495, UA-7, Silo 2, E",2133,16);
+     };
+     R_Date("MAMS-24515, UA-7, D",2168,23);
+    };
+    R_Date("MAMS-24508, UA-9, D",2288,21);
+    R_Date("MAMS-24507, UA-10, D",2153,21);
+    Sequence("UA 11")
+    {
+     Phase("UA 11, D")
+     {
+      R_Date("MAMS-24520, UA-11, D",2149,22);
+      R_Date("MAMS-24496, UA-11, Mancha, D",2210,17);
+     };
+     R_Date("MAMS-24519, UA-11, C",2114,21);
+    };
+    Sequence("UA-12")
+    {
+     R_Date("MAMS-24497, UA-12, E",2248,17);
+     R_Date("MAMS-24521, UA-12, C",2205,22);
+    };
+    R_Date("MAMS-24498, UA-13, F",2048,16);
+    Phase("UA-17, J")
+    {
+     R_Date("MAMS-24509, UA-17, J",2177,23);
+     R_Date("MAMS-24499, UA-17, Mancha 1, J",2087,17);
+    };
+    R_Date("Hd-26808, B",2158,20);
+    R_Date("Hd-26860, C",2206,39);
+    R_Date("Hd-26862, D2",2102,42);
+   };
+   Boundary("End Cutamalla");
+  };
+  Sequence("Collanco")
+  {
+   Boundary("Start Collanco");
+   KDE_Plot("Capas D & E, but four different structures")
+   {
+    //Capa E
+    R_Date("MAMS-24510, sample 1891",2126,22);
+    //Capa D
+    R_Date("MAMS-24500, sample 1886",2131,16);
+    R_Date("MAMS-24511, sample 1892",2106,23);
+   };
+   Boundary("End Collanco");
+   //Capa E, but it is too young compared to three dates from capas D and E. Manually rejected.
+   //R_Date("MAMS-24523, sample 1888",1939,21);
+  //Capa D. Much too old for context and other dates from the same level. Manually rejected.
+  //R_Date("MAMS-24501, sample 1889”,3199,19);
+  //Capa C. Much too young for context, manually rejected
+   //R_Date("MAMS-24502, sample 1890",1516,21);
+  };
+ };
